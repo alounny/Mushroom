@@ -32,17 +32,17 @@ MyRealTimeClock myRTC(5, 4, 0);
 String datetime;
 
 //Connect wifi
-const char *ssid =  "tnp1999";
-const char *pass =  "12345678";
+const char *ssid =  "Tnplj";
+const char *pass =  "tnp60006003";
 
 //พากสวนกานเชื่อมต่อ MQTT
 const char* mqtt_server = "mqtt.mounoydev.com";//const char* mqtt_server = "broker.hivemq.com";
 const char* mqtt_user = "mn";
 const char* mqtt_pass = "mn";
 char* Device_key = "mroom";
-const char* topicOut = "inTopiclao";
+const char* topicOut = "ttgo";
 const char* topicInit = "inTopiclao";
-const char* topicWarning = "warnTop";
+const char* topicStatus= "statusTopic";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -101,7 +101,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   const char* actionKey = doc["key"];
   int key = String(actionKey).toInt();
-  if (key == 0) { //Todo: if key=1 is set the manual config for three Relay_1_2_3
+  if(key == -1){
+    String mHm = "{hmPin:'" + mHumidity.pin + "',hmStatus:" +mHumidity.statusUse + ", finPin:'" + mFanIn.pin+ "',finStatus:" + mFanIn.statusUse + ",foutPin:'" + mFanOut.pin + "',foutStatus:" + mFanOut.statusUse + "}";
+    client.publish(topicStatus, string2char(mHm));
+  }
+  else if (key == 0) { //Todo: if key=1 is set the manual config for three Relay_1_2_3
     const char* pin = doc["pin"];
     const char* val = doc["val"];
     const char* stUse = doc["stuse"];
@@ -250,7 +254,6 @@ void reconnect() {
       // ... and resubscribe
       client.subscribe(topicInit);
       client.publish(topicOut, "hello world Laos");  //publish funtion to outTopiclao
-      client.publish(topicWarning, "getGonfig");  //publish funtion to outTopiclao
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -297,17 +300,14 @@ void loop() {
   unsigned long now = millis();
 
   //Todo: Start Test
-  if (now - timer >= 60000) {
-    timer = now;
-
-    //    client.publish(topicWarning, "{\"mPin\":"+mHumidity.pin+",\"mTimer\":"+mHumidity.timer+",\"mStatus\":"+mHumidity.statusUse+"}");
-
-    //    String manualFanIn="{\"mPin\":"+mFanIn.pin+",\"mTimer\":"+mFanIn.timer+",\"mStatus\":"+mFanIn.statusUse+"}";
-    //    client.publish(topicWarning, manualFanIn);
-    //
-    //    String manualFanOut="{\"mPin\":"+mFanOut.pin+",\"mTimer\":"+mFanOut.timer+",\"mStatus\":"+mFanOut.mFanOut+"}";
-    //    client.publish(topicWarning, manualFanOut);
-  }
+//  if (now - timer >= 10000) {
+//    timer = now;
+//    String mFIn = "{mPin:'" + mFanIn.pin + "',mTimer:" + mFanIn.timer + ",mStatus:" + mFanIn.statusUse + "}";
+//    client.publish(topicFan, string2char(mFIn));
+//
+//    String mFOut = "{mPin:'" + mFanOut.pin + "',mTimer:" + mFanOut.timer + ",mStatus:" + mFanOut.statusUse + "}";
+//    client.publish(topicFan, string2char(mFOut));
+//  }
 
   //  resetEEPROM(0,512);//Todo: Reset EEPROM
   Clock();
@@ -315,21 +315,13 @@ void loop() {
   //Todo: End Test
 
   if (now - lastMsg >= 10000) {
-    //    lastMsg = now;
-    //    if (Sensor1() == "nan" && Sensor2() == "nan")
-    //      client.publish(topicWarning, "Sensor 1 and Sensor 2 not connect");
-    //    else if (Sensor1() == "nan")
-    //      client.publish(topicWarning, "Sensor 1 not connect");
-    //    else if (Sensor2() == "nan")
-    //      client.publish(topicWarning, "Sensor 2 not connect");
-    //
-    //    String strtm = String(Device_key) + "," +  Sensor1() + "," + Sensor2();
-    //    client.publish(topicOut, string2char(strtm));      //PUSH DATA TO MQTT
-    //    SerialMon.println(string2char(strtm));
-
-    //
-    //    //  JustOne = false;
-    //    // last_time = millis();
+        lastMsg = now;
+        String strtm = String(Device_key) + "," +  Sensor1() + "," + Sensor2();
+        client.publish(topicOut, string2char(strtm));      //PUSH DATA TO MQTT
+        SerialMon.println(string2char(strtm));
+    
+        //  JustOne = false;
+        // last_time = millis();
   }
   //
   Sensor1();
@@ -392,28 +384,7 @@ String Clock() {
   datetime = String(myRTC.dayofmonth) + "/" + String(myRTC.month)
              + "/" + String(myRTC.year) + " " + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":" + String(myRTC.seconds);
   Serial.println(datetime);
-  //  Serial.println("Now: " + String(String(myRTC.hours).toInt()) + ":" + String(String(myRTC.minutes).toInt()));
-  if (RL != "") {
-
-  } else {
-    //Auto Controll================>
-    //        int out = 0 , hu = String(tstart.substring(0, 2).toInt()), mn = String(tstart.substring(3, 5).toInt());
-    //        if ((mn + String(myRTC.minutes).toInt()) >= 60) {
-    //          mn = (mn + String(myRTC.minutes).toInt()) - 60;
-    //          out = 1;
-    //        } else
-    //          mn = mn + String(myRTC.minutes).toInt();
-    //
-    //        if ((hu + String(myRTC.hours).toInt() + out) >= 24)
-    //          hu = (hu + String(           / r / myRTC.hours).toInt() + out) - 24;
-    //        else
-    //          hu = (hu + String(myRTC.hours).toInt() + out);
-    //
-    //        autoTimer = hu + ":" + mn;
-    //      }
-    delay(1000);
     return datetime;
-  }
 }
 
 void ChackTimerForWork() {
